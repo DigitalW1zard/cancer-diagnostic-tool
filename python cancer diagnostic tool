@@ -1,0 +1,67 @@
+import joblib
+import numpy as np
+
+# Placeholder models for different cancer types
+MODEL_PATHS = {
+    "lung": "models/lung_cancer_model.pkl",
+    "breast": "models/breast_cancer_model.pkl",
+    "skin": "models/skin_cancer_model.pkl",
+    "colon": "models/colon_cancer_model.pkl",
+    "prostate": "models/prostate_cancer_model.pkl"
+}
+
+class CancerDiagnosticTool:
+    def __init__(self):
+        self.models = {}
+        self.load_models()
+
+    def load_models(self):
+        """Load pre-trained models for all cancer types."""
+        for cancer_type, path in MODEL_PATHS.items():
+            try:
+                self.models[cancer_type] = joblib.load(path)
+                print(f"Loaded model for {cancer_type} cancer.")
+            except FileNotFoundError:
+                print(f"Model for {cancer_type} not found at {path}.")
+
+    def diagnose(self, cancer_type, input_features):
+        """
+        Diagnose a specific type of cancer using the appropriate model.
+        
+        Parameters:
+            cancer_type (str): Type of cancer (e.g., "lung", "breast").
+            input_features (list): Patient features as numerical values.
+        
+        Returns:
+            dict: Diagnosis result and risk score.
+        """
+        if cancer_type not in self.models:
+            return {"error": f"No model available for {cancer_type} cancer."}
+        
+        model = self.models[cancer_type]
+        risk_score = model.predict_proba([input_features])[0, 1]  # Probability of cancer
+        diagnosis = "High Risk" if risk_score > 0.5 else "Low Risk"
+        
+        return {
+            "cancer_type": cancer_type,
+            "diagnosis": diagnosis,
+            "risk_score": round(risk_score * 100, 2)
+        }
+
+# Example usage
+if __name__ == "__main__":
+    # Initialize the tool
+    diagnostic_tool = CancerDiagnosticTool()
+
+    # Example patient data (numerical values corresponding to features)
+    patient_data = {
+        "lung": [65, 1, 2, 3.5, 0],  # Example: Age, Smoking Status, Nodules, Biomarker Levels, etc.
+        "breast": [45, 0, 3.1, 5.2, 1],  # Example: Age, Gender, Lump Size, Biomarkers, Family History, etc.
+    }
+
+    # Run diagnosis for each cancer type
+    for cancer_type, features in patient_data.items():
+        result = diagnostic_tool.diagnose(cancer_type, features)
+        print(f"\n{cancer_type.capitalize()} Cancer Diagnosis:")
+        print(f"  Diagnosis: {result.get('diagnosis')}")
+        print(f"  Risk Score: {result.get('risk_score')}%")
